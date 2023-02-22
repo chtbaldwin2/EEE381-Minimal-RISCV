@@ -1,28 +1,10 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 21.02.2023 12:42:00
-// Design Name: 
-// Module Name: riscv_alu_constants
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module riscv_alu_constants(
     );
     
+    //parameters used in the ALU to indicate function
+    //called upon by other parts of the CPU
     localparam[3:0] ALUOP_AND = 4'b0000;
     localparam[3:0] ALUOP_OR = 4'b0001;
     localparam[3:0] ALUOP_ADD = 4'b0010;
