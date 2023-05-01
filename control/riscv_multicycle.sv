@@ -50,6 +50,32 @@ module riscv_multicycle #(parameter INITIAL_PC = 32'h00400000)
     typedef enum logic[2:0] {IF, ID, EX, MEM, WB, ERR='X} State;
     State currentState, nextState;
     
+        //state machine logic
+    always_ff@(posedge clk)
+        currentState <= nextState;
+
+    //state machine determines the next stage of the cycle
+    always_comb begin   
+           nextState = ERR;         
+           if(rst)
+                nextState = IF;
+           else          
+           case(currentState)
+                IF: 
+                    nextState = ID;
+                ID:
+                    nextState = EX;   
+                EX: 
+                    nextState = MEM;   
+                MEM:              
+                    nextState = WB;   
+                WB: 
+                    nextState = IF; 
+                default:
+                    nextState = IF; 
+           endcase        
+    end
+    
     //splits instruction to find opcode, funct3 and funct7 parts
     //some instructions do not contain funct3/funct7 - these are filtered about before
     assign opcode = {instruction[6:0]};
@@ -71,40 +97,37 @@ module riscv_multicycle #(parameter INITIAL_PC = 32'h00400000)
         if((opcode == ilTYPE) || (opcode == sTYPE))                                             //load, store
             ALUCtrl = ALUOP_ADD;
         
-        else if(opcode == bTYPE)                                                                //branching and subtraction
+        else if(opcode == bTYPE)                                                                //branching
             ALUCtrl = ALUOP_SUB;
         
         else if((opcode == rTYPE) || (opcode == iTYPE)) begin
         
-            if(funct3 == FUNCT3_OR)                                                             //or logic and ori
-                ALUCtrl = ALUOP_OR;
-            
-            else if(funct3 == FUNCT3_SLT)                                                       //slt/slti
-                ALUCtrl = ALUOP_LES;
-            
-            else if(funct3 == FUNCT3_XOR)                                                       //xor logic and xori
-                ALUCtrl = ALUOP_XOR;
+            if(funct3 == FUNCT3_AND)                                                            //and/andi
+                ALUCtrl = ALUOP_AND;                                                            //0000
                 
-            else if(funct3 == FUNCT3_AND)                                                       //and logic and andi
-                ALUCtrl = ALUOP_AND;
-                                       
-            else if((funct3 == FUNCT3_SUB) && (funct7 == FUNCT7_SUB) && (opcode == rTYPE))      //subtraction
-                ALUCtrl = ALUOP_SUB;
+            else if(funct3 == FUNCT3_OR)                                                        //or/ori
+                ALUCtrl = ALUOP_OR;                                                             //0001
+        
+            else if((funct3 == FUNCT3_ADD) && ((funct7 == FUNCT7_ADD) || (opcode == iTYPE)))    //add/addi
+                ALUCtrl = ALUOP_ADD;                                                            //0010
                 
-            else if((funct3 == FUNCT3_ADD) && (opcode == iTYPE))                                //addi
-                ALUCtrl = ALUOP_ADD;
-              
-            else if((funct3 == FUNCT3_ADD) && (funct7 == FUNCT7_ADD))                           //add
-                ALUCtrl = ALUOP_ADD;
+            else if((funct3 == FUNCT3_SUB) && (funct7 == FUNCT7_SUB) && (opcode == rTYPE))      //sub
+                ALUCtrl = ALUOP_SUB;                                                            //0110                       
             
-            else if(funct3 == FUNCT3_SLL)                                                       //shift left logical/slli
-                ALUCtrl = ALUOP_SLL;
+            else if(funct3 == FUNCT3_SLT)                                                       //less than/slti
+                ALUCtrl = ALUOP_SLT;                                                            //0111
                 
             else if((funct3 == FUNCT3_SRL) && (funct7 == FUNCT7_SRL))                           //shift right logical/srli
-                ALUCtrl = ALUOP_SRL;
+                ALUCtrl = ALUOP_SRL;                                                            //1000
+                
+            else if(funct3 == FUNCT3_SLL)                                                       //shift left logical/slli
+                ALUCtrl = ALUOP_SLL;                                                            //1001
                 
             else if((funct3 == FUNCT3_SRA) && (funct7 == FUNCT7_SRA))                           //sra/srai
-                ALUCtrl = ALUOP_SRA;
+                ALUCtrl = ALUOP_SRA;                                                            //1010                                      
+            
+            else if(funct3 == FUNCT3_XOR)                                                       //xor logic and xori
+                ALUCtrl = ALUOP_XOR;                                                            //1101                                                                          
                 
             else
                 ALUCtrl = ALUOP_ADD;                                                        //default case
@@ -112,37 +135,6 @@ module riscv_multicycle #(parameter INITIAL_PC = 32'h00400000)
             
         else
             ALUCtrl = ALUOP_ADD;                                                            //default case
-    end
-    
-    //state machine logic
-    always_ff@(posedge clk)
-        currentState <= nextState;
-
-    //state machine determines the next stage of the cycle
-    always_comb begin
-    
-           nextState = ERR;
-           
-           if(rst)
-                nextState = IF;
-           else
-           
-           case(currentState)
-                IF: 
-                    nextState = ID;
-                ID:
-                    nextState = EX;   
-                EX: 
-                    nextState = MEM;   
-                MEM:              
-                    nextState = WB;   
-                WB: 
-                    nextState = IF; 
-                default:
-                    nextState = IF; 
-           endcase
-           
-    end
-         
+    end         
          
 endmodule
